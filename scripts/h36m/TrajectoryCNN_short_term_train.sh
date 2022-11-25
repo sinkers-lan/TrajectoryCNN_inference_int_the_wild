@@ -16,7 +16,7 @@ nohup python -u train_TrajectoryCNN_h36m.py \
     --real_test_file ${realtestfile} \
     --save_dir ${modelpath} \
     --gen_dir ${savepath} \
-    --bak_dir ${bak_path}   \
+    --bak_dir ${bak_path} \
     --pretrained_model ${pretrain_modelpath} \
     --input_length 10 \
     --seq_length 20 \

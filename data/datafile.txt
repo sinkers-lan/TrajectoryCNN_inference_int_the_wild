@@ -1,1 +1,1 @@
-
+h36m20/my_test/output.npy是通过VideoPose3D的Inference in the wild运行之后得到的.npy文件。把这个文件作为此模型的输入，运行test

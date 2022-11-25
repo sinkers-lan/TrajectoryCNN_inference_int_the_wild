@@ -80,6 +80,10 @@ print('!!! TrajectoryCNN:', num_hidden)
 
 class Model(object):
     def __init__(self):
+        if FLAGS.pretrained_model:
+            print('!!!')
+        else:
+            print('???')
         # inputs
         self.x = [tf.placeholder(tf.float32, [FLAGS.batch_size,
                                               FLAGS.seq_length + FLAGS.seq_length - FLAGS.input_length,
@@ -172,7 +176,6 @@ def test(model):
     if not tf.gfile.Exists(res_path):
         os.mkdir(res_path)
     test_time = 0
-    start_time1 = time.time()
     print('loading inputs from', FLAGS.real_test_file)
     data = np.load(FLAGS.real_test_file)  # (338, 17, 3)
 
@@ -214,12 +217,13 @@ def test(model):
     all_input[:, 0, index_list_tem] = data[:, index_list_data]
 
     steps = 1
-    for j in range(len(all_input) - steps):
-        for i in range(1, FLAGS.seq_length):
-            all_input[j, i] = all_input[j + steps, 0]
+    for j in range(len(all_input) - FLAGS.input_length - steps):
+        for i in range(1, FLAGS.input_length):
+            all_input[j, i] = all_input[j + i, 0]
 
     img_gen = np.ndarray((0, FLAGS.seq_length - FLAGS.input_length, FLAGS.joints_number, 3))
     for i in range(int(len(all_input) / FLAGS.batch_size)):
+        start_time1 = time.time()
         tem = all_input[i * FLAGS.batch_size:i * FLAGS.batch_size + FLAGS.batch_size]
         tem = np.repeat(tem, FLAGS.n_gpu, axis=0)
         test_ims = tem[:, 0:FLAGS.seq_length, :, :]
@@ -242,6 +246,7 @@ def test(model):
         img_gen = np.concatenate((img_gen, test_gen), axis=0)
 
     print(f'test time: {test_time}')
+
     # 换维度
     save_data_1 = np.zeros((FLAGS.batch_size * int(len(data - 10) / FLAGS.batch_size / steps), FLAGS.joints_number, 3))
     for ik in range(int(len(save_data_1) / steps)):
@@ -269,6 +274,7 @@ def test(model):
     if not tf.gfile.Exists(path):
         os.mkdir(path)
     np.save(path, save_data_2)
+    np.save(os.path.join(path, 'img_gen.npy'), img_gen)
     print('save test done!')
 
 
@@ -361,7 +367,7 @@ def main(argv=None):
                 print('train time:' + str(train_time))
                 print('test...')
                 str1 = 'walking eating smoking discussion directions greeting phoning posing purchases sitting ' \
-                       'sittingdown takingphoto waiting walkingdog walkingtogether '
+                       'sittingdown takingphoto waiting walkingdog walkingtogether'
                 str1 = str1.split(' ')
                 res_path = os.path.join(FLAGS.gen_dir, str(itr))
                 if not tf.gfile.Exists(res_path):
@@ -443,12 +449,12 @@ def main(argv=None):
                         for i in range(FLAGS.seq_length):
                             name = 'gt' + str(i + 1) + '.mat'
                             file_name = os.path.join(spath, name)
-                            img_gt = test_ims1[ik * 8, i, :, :]
+                            img_gt = test_ims1[ik * FLAGS.n_gpu*FLAGS.batch_size//8, i, :, :]
                             io.savemat(file_name, {'joint': img_gt})
                         for i in range(FLAGS.seq_length - FLAGS.input_length):
                             name = 'pd' + str(i + 1 + FLAGS.input_length) + '.mat'
                             file_name = os.path.join(spath, name)
-                            img_pd = img_gen[ik * 8, i, :, :]
+                            img_pd = img_gen[ik * FLAGS.n_gpu*FLAGS.batch_size//8, i, :, :]
                             io.savemat(file_name, {'joint': img_pd})
                     mpjpe1 = mpjpe1 / (FLAGS.batch_size * FLAGS.n_gpu)
                     print('current action mpjpe: ', s)
