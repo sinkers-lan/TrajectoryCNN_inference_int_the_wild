@@ -179,6 +179,8 @@ def test(model):
     print('loading inputs from', FLAGS.real_test_file)
     data = np.load(FLAGS.real_test_file)  # (338, 17, 3)
 
+    steps = 10
+    n = (len(data) - FLAGS.input_length) // steps + 1
     all_input = np.zeros((len(data), 20, 32, 3))
     trans_video_pose = {
         0: 0,
@@ -212,14 +214,15 @@ def test(model):
     new_trans_trajectory_cnn = dict(zip(trans_trajectory_cnn.values(), trans_trajectory_cnn.keys()))
     index_list_tem = []
     index_list_data = np.arange(17)
+    # 换节点顺序
     for i in range(17):
         index_list_tem.append(new_trans_trajectory_cnn[trans_video_pose[i]])
     all_input[:, 0, index_list_tem] = data[:, index_list_data]
-
-    steps = 1
-    for j in range(len(all_input) - FLAGS.input_length - steps):
-        for i in range(1, FLAGS.input_length):
-            all_input[j, i] = all_input[j + i, 0]
+    # 换维度
+    for j in range(n):
+        for i in range(0, FLAGS.input_length):
+            all_input[j, i] = all_input[j * steps + i, 0]
+    all_input = np.delete(all_input, range(n + 1, len(data)), axis=0)
 
     img_gen = np.ndarray((0, FLAGS.seq_length - FLAGS.input_length, FLAGS.joints_number, 3))
     for i in range(int(len(all_input) / FLAGS.batch_size)):
@@ -248,11 +251,11 @@ def test(model):
     print(f'test time: {test_time}')
 
     # 换维度
-    save_data_1 = np.zeros((FLAGS.batch_size * int(len(data - 10) / FLAGS.batch_size / steps), FLAGS.joints_number, 3))
-    for ik in range(int(len(save_data_1) / steps)):
+    save_data_1 = np.zeros(((n - n % FLAGS.batch_size - 1) * steps + FLAGS.input_length, FLAGS.joints_number, 3))
+    for ik in range(n - n % FLAGS.batch_size):
         for step in range(steps):
-            save_data_1[ik + step] = img_gen[
-                (ik + step) * FLAGS.n_gpu, FLAGS.seq_length - FLAGS.input_length - step - 1]
+            save_data_1[ik * steps + step] = img_gen[
+                ik * FLAGS.n_gpu, FLAGS.seq_length - FLAGS.input_length - steps + step]
     static_joints = np.array(
         [[[-1.32948593e+02, 0.00000000e+00, 0.00000000e+00],
          [1.32948822e+02, 0.00000000e+00, 0.00000000e+00]]]
@@ -270,10 +273,14 @@ def test(model):
     save_data_2 = np.insert(save_data_2, np.zeros((10, ), dtype=np.intp), values=np.zeros(save_data_2.shape[1:]), axis=0)
 
     # save prediction examples
+    save_data_3 = save_data_2.reshape(-1)
+    save_data_3 = save_data_3 / (np.max(save_data_3) - np.min(save_data_3)) * 2
+    save_data_3 = save_data_3.reshape((-1, 17, 3))
     path = res_path
     if not tf.gfile.Exists(path):
         os.mkdir(path)
-    np.save(path, save_data_2)
+    np.save(os.path.join(path, 'all_input.npy'), all_input)
+    np.save(path, save_data_3)
     np.save(os.path.join(path, 'img_gen.npy'), img_gen)
     print('save test done!')
 
