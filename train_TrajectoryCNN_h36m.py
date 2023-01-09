@@ -179,7 +179,7 @@ def test(model):
     print('loading inputs from', FLAGS.real_test_file)
     data = np.load(FLAGS.real_test_file)  # (338, 17, 3)
 
-    steps = 10
+    steps = 1
     n = (len(data) - FLAGS.input_length) // steps + 1
     all_input = np.zeros((len(data), 20, 32, 3))
     trans_video_pose = {
@@ -255,7 +255,7 @@ def test(model):
     for ik in range(n - n % FLAGS.batch_size):
         for step in range(steps):
             save_data_1[ik * steps + step] = img_gen[
-                ik * FLAGS.n_gpu, FLAGS.seq_length - FLAGS.input_length - steps + step]
+                ik * FLAGS.n_gpu, (FLAGS.seq_length - FLAGS.input_length - steps) // 2 + step]
     static_joints = np.array(
         [[[-1.32948593e+02, 0.00000000e+00, 0.00000000e+00],
          [1.32948822e+02, 0.00000000e+00, 0.00000000e+00]]]
