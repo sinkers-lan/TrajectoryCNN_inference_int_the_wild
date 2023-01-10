@@ -3,8 +3,8 @@ export CUDA_VISIBLE_DEVICES=0,1
 cd ../..
 savepath='results/h36m/v2'
 modelpath='checkpoints/h36m/v2'
-pretrain_modelpath='checkpoints/h36m/v1/model.ckpt-769500'
-realtestfile='data/h36m20/my_test/outputfile.npy'
+pretrainmodelpath='checkpoints/h36m/v1/model.ckpt-769500'
+realtestfile='data/h36m20/my_test/h36m2.npy'
 #sleep 4h
 logname='logs/h36m/v2_test.log'
 nohup python -u train_TrajectoryCNN_h36m.py \
@@ -17,7 +17,7 @@ nohup python -u train_TrajectoryCNN_h36m.py \
     --save_dir ${modelpath} \
     --gen_dir ${savepath} \
     --bak_dir ${bak_path} \
-    --pretrained_model ${pretrain_modelpath} \
+    --pretrained_model ${pretrainmodelpath} \
     --input_length 10 \
     --seq_length 20 \
     --stacklength 4 \

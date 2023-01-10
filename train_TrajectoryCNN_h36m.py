@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_string('gen_dir', 'results/mnist_predcnn',
 tf.app.flags.DEFINE_string('bak_dir', 'results/mnist_predcnn/bak',
                            'dir to backup result.')
 # model parameter
-tf.app.flags.DEFINE_string('pretrained_model', '',
+tf.app.flags.DEFINE_string('pretrained_model', 'checkpoints/h36m/v1/model.ckpt-769500',
                            'file of a pretrained model to initialize from.')
 tf.app.flags.DEFINE_integer('input_length', 10,
                             'encoder hidden states.')
@@ -170,7 +170,7 @@ class Model(object):
         print('saved to ' + FLAGS.save_dir)
 
 
-def test(model):
+def tst(model):
     print('test...')
     res_path = os.path.join(FLAGS.gen_dir, 'test')
     if not tf.gfile.Exists(res_path):
@@ -269,7 +269,8 @@ def test(model):
     save_data_2 = np.zeros((len(save_data_1), 17, 3))
     save_data_2[:, index_after] = save_data_1[:, np.arange(14)]
 
-    save_data_2[:, [1, 4]] = np.repeat(static_joints, len(save_data_2), axis=0)
+    # save_data_2[:, [1, 4]] = np.repeat(static_joints, len(save_data_2), axis=0)
+    save_data_2[:, [1, 4]] = data[:save_data_2.shape[0], [1, 4]]
     save_data_2 = np.insert(save_data_2, np.zeros((10, ), dtype=np.intp), values=np.zeros(save_data_2.shape[1:]), axis=0)
 
     # save prediction examples
@@ -306,7 +307,7 @@ def main(argv=None):
     Keep_prob = 0.75
 
     if FLAGS.is_training == 'False':
-        test(model)
+        tst(model)
 
     if FLAGS.is_training == 'True':
         # load data
